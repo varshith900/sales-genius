@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/AppLayout";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { MarkdownRenderer, stripMarkdown } from "@/components/MarkdownRenderer";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -115,8 +116,8 @@ const CustomerDetail = () => {
     setEmailStatus("sending");
     let subject = `Follow-up from SalesAgent AI`;
     const subjectMatch = emailContent.match(/Subject:\s*(.+)/i);
-    if (subjectMatch) subject = subjectMatch[1].trim();
-    const body = emailContent.replace(/Subject:\s*.+\n?/i, "").trim();
+    if (subjectMatch) subject = stripMarkdown(subjectMatch[1].trim());
+    const body = stripMarkdown(emailContent.replace(/Subject:\s*.+\n?/i, "").trim());
 
     try {
       const response = await supabase.functions.invoke("send-email", {
@@ -470,7 +471,7 @@ const CustomerDetail = () => {
                         )}
                       </div>
                     </div>
-                    <div className="text-foreground/90 whitespace-pre-wrap text-sm leading-relaxed">{content}</div>
+                    <MarkdownRenderer content={content} className="text-sm" />
                   </Card>
                 </motion.div>
               );
