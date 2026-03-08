@@ -35,39 +35,58 @@ export function AppSidebar() {
   const { signOut } = useAuth();
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarContent>
+    <Sidebar collapsible="icon" className="border-r border-border/50">
+      <SidebarContent className="bg-gradient-to-b from-sidebar to-background">
         <SidebarGroup>
           <SidebarGroupLabel>
-            <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-primary" />
-              {!collapsed && <span className="font-display font-bold text-gradient">SalesAgent AI</span>}
+            <div className="flex items-center gap-2.5 py-1">
+              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shadow-glow shrink-0">
+                <Bot className="h-4 w-4 text-primary-foreground" />
+              </div>
+              {!collapsed && (
+                <span className="font-display font-bold text-gradient text-base tracking-tight">
+                  SalesAgent AI
+                </span>
+              )}
             </div>
           </SidebarGroupLabel>
-          <SidebarGroupContent className="mt-4">
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/"}
-                      className="hover:bg-sidebar-accent"
-                      activeClassName="bg-sidebar-accent text-primary font-medium"
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+          <SidebarGroupContent className="mt-6">
+            <SidebarMenu className="space-y-1">
+              {items.map((item) => {
+                const isActive = item.url === "/"
+                  ? location.pathname === "/"
+                  : location.pathname.startsWith(item.url);
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/"}
+                        className={`rounded-lg transition-all duration-200 hover:bg-primary/[0.06] ${
+                          isActive
+                            ? "bg-primary/[0.08] text-primary shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        activeClassName="bg-primary/[0.08] text-primary"
+                      >
+                        <item.icon className={`mr-2.5 h-4 w-4 transition-colors ${isActive ? "text-primary" : ""}`} />
+                        {!collapsed && <span className="font-medium">{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <Button variant="ghost" onClick={signOut} className="w-full justify-start text-muted-foreground hover:text-destructive">
-          <LogOut className="mr-2 h-4 w-4" />
+      <SidebarFooter className="border-t border-border/50 p-3">
+        <Button
+          variant="ghost"
+          onClick={signOut}
+          className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/[0.06] rounded-lg transition-all duration-200"
+        >
+          <LogOut className="mr-2.5 h-4 w-4" />
           {!collapsed && "Sign Out"}
         </Button>
       </SidebarFooter>
