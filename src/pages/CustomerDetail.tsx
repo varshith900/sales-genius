@@ -629,7 +629,7 @@ const CustomerDetail = () => {
                         <Button variant="ghost" size="icon" onClick={() => copyToClipboard(content, section.title)} className="hover:text-primary">
                           <Copy className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => downloadText(content, `${customer.name}-${section.key}.txt`)} className="hover:text-primary">
+                        <Button variant="ghost" size="icon" onClick={() => downloadPdf(content, `${customer.name}-${section.key}.pdf`, section.key)} className="hover:text-primary">
                           <Download className="h-4 w-4" />
                         </Button>
                         {section.key === "email" && customer.email && emailStatus !== "sent" && (
