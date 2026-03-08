@@ -118,28 +118,7 @@ const AddCustomer = () => {
     }
   };
 
-  const FormField = ({ label, id, required, error, children }: { label: string; id: string; required?: boolean; error?: string; children: React.ReactNode }) => (
-    <motion.div
-      className="space-y-1.5"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Label htmlFor={id} className="text-sm font-medium">
-        {label} {required && <span className="text-primary">*</span>}
-      </Label>
-      {children}
-      {error && (
-        <motion.p
-          className="text-xs text-destructive"
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          {error}
-        </motion.p>
-      )}
-    </motion.div>
-  );
+  // FormField extracted outside component to prevent re-mount
 
   return (
     <AppLayout>
