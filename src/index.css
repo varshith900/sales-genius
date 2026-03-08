@@ -17,6 +17,7 @@
 
     --primary: 217 91% 60%;
     --primary-foreground: 222 47% 6%;
+    --primary-glow: 199 89% 48%;
 
     --secondary: 222 30% 14%;
     --secondary-foreground: 210 40% 90%;
@@ -45,7 +46,7 @@
     --sidebar-border: 222 30% 18%;
     --sidebar-ring: 217 91% 60%;
 
-    /* Custom tokens */
+    /* Status tokens */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
@@ -53,10 +54,17 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
+    /* Premium design tokens */
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(199 89% 48%));
-    --gradient-card: linear-gradient(145deg, hsl(222 41% 9%), hsl(222 41% 11%));
+    --gradient-accent: linear-gradient(135deg, hsl(265 89% 60%), hsl(217 91% 60%));
+    --gradient-card: linear-gradient(145deg, hsl(222 41% 9%), hsl(222 41% 12%));
+    --gradient-subtle: linear-gradient(180deg, hsl(222 41% 10%), hsl(222 41% 8%));
     --shadow-glow: 0 0 20px hsl(217 91% 60% / 0.15);
+    --shadow-glow-lg: 0 0 40px hsl(217 91% 60% / 0.2);
     --shadow-card: 0 4px 24px hsl(222 47% 3% / 0.5);
+    --shadow-elevated: 0 8px 32px hsl(222 47% 3% / 0.6), 0 2px 8px hsl(222 47% 3% / 0.3);
+    --glass-bg: hsl(222 41% 9% / 0.7);
+    --glass-border: hsl(210 40% 96% / 0.08);
   }
 }
 
@@ -73,25 +81,144 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
   }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(222 41% 7%);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(222 30% 22%);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(222 30% 28%);
+  }
 }
 
 @layer utilities {
+  /* Gradients */
   .gradient-primary {
     background: var(--gradient-primary);
+  }
+  .gradient-accent {
+    background: var(--gradient-accent);
   }
   .gradient-card {
     background: var(--gradient-card);
   }
+  .gradient-subtle {
+    background: var(--gradient-subtle);
+  }
+
+  /* Shadows */
   .shadow-glow {
     box-shadow: var(--shadow-glow);
+  }
+  .shadow-glow-lg {
+    box-shadow: var(--shadow-glow-lg);
   }
   .shadow-card {
     box-shadow: var(--shadow-card);
   }
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+
+  /* Glassmorphism */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border: 1px solid var(--glass-border);
+  }
+  .glass-subtle {
+    background: hsl(222 41% 9% / 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+  }
+
+  /* Text effects */
   .text-gradient {
     background: var(--gradient-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+  .text-gradient-accent {
+    background: var(--gradient-accent);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Shimmer / skeleton loading */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(222 30% 14%) 25%,
+      hsl(222 30% 20%) 50%,
+      hsl(222 30% 14%) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  /* Animated border glow */
+  .border-glow {
+    position: relative;
+    overflow: hidden;
+  }
+  .border-glow::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--gradient-primary);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .border-glow:hover::before {
+    opacity: 1;
+  }
+
+  /* Hover interactions */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .hover-scale {
+    transition: transform 0.2s ease;
+  }
+  .hover-scale:hover {
+    transform: scale(1.02);
+  }
+
+  /* Focus glow for inputs */
+  .focus-glow:focus-within {
+    box-shadow: 0 0 0 2px hsl(217 91% 60% / 0.2);
+    border-color: hsl(217 91% 60% / 0.5);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
