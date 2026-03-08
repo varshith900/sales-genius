@@ -471,7 +471,7 @@ const CustomerDetail = () => {
                         )}
                       </div>
                     </div>
-                    <div className="text-foreground/90 whitespace-pre-wrap text-sm leading-relaxed">{content}</div>
+                    <MarkdownRenderer content={content} className="text-sm" />
                   </Card>
                 </motion.div>
               );
