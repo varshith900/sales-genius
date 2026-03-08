@@ -34,6 +34,18 @@ const customerSchema = z.object({
   last_interaction_date: z.string().optional(),
 });
 
+const FormField = ({ label, id, required, error, children }: { label: string; id: string; required?: boolean; error?: string; children: React.ReactNode }) => (
+  <div className="space-y-1.5">
+    <Label htmlFor={id} className="text-sm font-medium">
+      {label} {required && <span className="text-primary">*</span>}
+    </Label>
+    {children}
+    {error && (
+      <p className="text-xs text-destructive">{error}</p>
+    )}
+  </div>
+);
+
 const dealStages = ["Lead", "Contacted", "Demo", "Negotiation", "Closed"];
 
 const AddCustomer = () => {
@@ -118,28 +130,6 @@ const AddCustomer = () => {
     }
   };
 
-  const FormField = ({ label, id, required, error, children }: { label: string; id: string; required?: boolean; error?: string; children: React.ReactNode }) => (
-    <motion.div
-      className="space-y-1.5"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Label htmlFor={id} className="text-sm font-medium">
-        {label} {required && <span className="text-primary">*</span>}
-      </Label>
-      {children}
-      {error && (
-        <motion.p
-          className="text-xs text-destructive"
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          {error}
-        </motion.p>
-      )}
-    </motion.div>
-  );
 
   return (
     <AppLayout>
@@ -168,7 +158,7 @@ const AddCustomer = () => {
           </p>
         </motion.div>
 
-        <form onSubmit={(e) => handleSubmit(e, false)}>
+        <form onSubmit={(e) => handleSubmit(e, false)} onKeyDown={(e) => { if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') e.preventDefault(); }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
