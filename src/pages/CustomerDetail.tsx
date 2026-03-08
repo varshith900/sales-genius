@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import jsPDF from "jspdf";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/AppLayout";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
@@ -196,14 +197,188 @@ const CustomerDetail = () => {
     toast.success(`${label} copied to clipboard!`);
   };
 
-  const downloadText = (text: string, filename: string) => {
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+  const downloadPdf = (text: string, filename: string, sectionKey: string) => {
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const contentWidth = pageWidth - margin * 2;
+    let y = margin;
+
+    const addPage = () => {
+      doc.addPage();
+      y = margin;
+    };
+
+    const checkPage = (needed: number) => {
+      if (y + needed > pageHeight - margin) {
+        addPage();
+      }
+    };
+
+    const isProposal = sectionKey === "proposal";
+
+    // Header
+    if (isProposal) {
+      // Professional proposal header
+      doc.setFillColor(15, 23, 42); // dark slate
+      doc.rect(0, 0, pageWidth, 45, "F");
+      doc.setFillColor(99, 102, 241); // indigo accent line
+      doc.rect(0, 45, pageWidth, 2, "F");
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.setFont("helvetica", "bold");
+      doc.text("Sales Proposal", margin, 20);
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Prepared for: ${customer?.name || ""} — ${customer?.company || ""}`, margin, 28);
+      doc.text(`Date: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, margin, 34);
+      doc.text("SalesAgent AI | contact.salesagentai@gmail.com", margin, 40);
+
+      y = 55;
+      doc.setTextColor(30, 30, 30);
+    } else {
+      // Standard header for other sections
+      doc.setFillColor(99, 102, 241);
+      doc.rect(0, 0, pageWidth, 1.5, "F");
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text(filename.replace(".pdf", "").replace(/-/g, " "), margin, y + 5);
+      y += 14;
+      doc.setDrawColor(200, 200, 210);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 8;
+    }
+
+    // Parse and render markdown lines
+    const lines = text.split("\n");
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      if (!trimmed) {
+        y += 4;
+        continue;
+      }
+
+      // Headings
+      if (trimmed.startsWith("### ")) {
+        checkPage(12);
+        y += 3;
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(50, 50, 60);
+        const heading = trimmed.slice(4).replace(/\*\*/g, "");
+        doc.text(heading, margin, y);
+        y += 7;
+        continue;
+      }
+      if (trimmed.startsWith("## ")) {
+        checkPage(14);
+        y += 5;
+        doc.setFontSize(13);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 30, 40);
+        const heading = trimmed.slice(3).replace(/\*\*/g, "");
+        if (isProposal) {
+          doc.setFillColor(240, 240, 250);
+          doc.rect(margin - 2, y - 5, contentWidth + 4, 9, "F");
+        }
+        doc.text(heading, margin, y);
+        y += 9;
+        continue;
+      }
+      if (trimmed.startsWith("# ")) {
+        checkPage(16);
+        y += 6;
+        doc.setFontSize(15);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(20, 20, 30);
+        const heading = trimmed.slice(2).replace(/\*\*/g, "");
+        doc.text(heading, margin, y);
+        y += 10;
+        continue;
+      }
+
+      // Numbered headings like "1. Executive Summary"
+      const numberedHeading = trimmed.match(/^(\d+)\.\s+\*\*(.+?)\*\*/);
+      if (numberedHeading && isProposal) {
+        checkPage(14);
+        y += 5;
+        doc.setFontSize(13);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(99, 102, 241);
+        doc.setFillColor(240, 240, 250);
+        doc.rect(margin - 2, y - 5, contentWidth + 4, 9, "F");
+        doc.text(`${numberedHeading[1]}. ${numberedHeading[2]}`, margin, y);
+        y += 9;
+        continue;
+      }
+
+      // Horizontal rule
+      if (trimmed === "---" || trimmed === "***") {
+        checkPage(6);
+        doc.setDrawColor(200, 200, 210);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 6;
+        continue;
+      }
+
+      // Regular text
+      doc.setFontSize(10);
+      doc.setTextColor(50, 50, 60);
+      const cleanText = trimmed.replace(/\*\*(.+?)\*\*/g, "$1").replace(/__(.+?)__/g, "$1");
+
+      // Bullet points
+      const isBullet = trimmed.startsWith("- ") || trimmed.startsWith("* ");
+      const numberedMatch = trimmed.match(/^(\d+)\.\s+(.+)/);
+
+      let textToPrint = cleanText;
+      let xOffset = margin;
+      if (isBullet) {
+        textToPrint = cleanText.slice(2);
+        xOffset = margin + 5;
+      } else if (numberedMatch && !numberedHeading) {
+        textToPrint = numberedMatch[2].replace(/\*\*(.+?)\*\*/g, "$1");
+        xOffset = margin + 2;
+      }
+
+      // Bold detection for inline
+      const hasBold = /\*\*(.+?)\*\*/.test(trimmed);
+      if (hasBold && !numberedHeading) {
+        doc.setFont("helvetica", "bold");
+      } else {
+        doc.setFont("helvetica", "normal");
+      }
+
+      const wrappedLines = doc.splitTextToSize(textToPrint, contentWidth - (xOffset - margin));
+      checkPage(wrappedLines.length * 5 + 2);
+
+      if (isBullet) {
+        doc.setFillColor(99, 102, 241);
+        doc.circle(margin + 1.5, y - 1.2, 0.8, "F");
+      } else if (numberedMatch && !numberedHeading) {
+        doc.setFont("helvetica", "bold");
+        doc.text(`${numberedMatch[1]}.`, margin, y);
+        doc.setFont("helvetica", "normal");
+      }
+
+      doc.text(wrappedLines, xOffset, y);
+      y += wrappedLines.length * 5 + 2;
+    }
+
+    // Footer
+    const footerY = pageHeight - 10;
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 160);
+    doc.setFont("helvetica", "italic");
+    doc.text("Generated by SalesAgent AI", margin, footerY);
+    doc.text(`Page 1`, pageWidth - margin - 10, footerY);
+
+    doc.save(filename);
   };
 
   if (loading) {
@@ -454,7 +629,7 @@ const CustomerDetail = () => {
                         <Button variant="ghost" size="icon" onClick={() => copyToClipboard(content, section.title)} className="hover:text-primary">
                           <Copy className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => downloadText(content, `${customer.name}-${section.key}.txt`)} className="hover:text-primary">
+                        <Button variant="ghost" size="icon" onClick={() => downloadPdf(content, `${customer.name}-${section.key}.pdf`, section.key)} className="hover:text-primary">
                           <Download className="h-4 w-4" />
                         </Button>
                         {section.key === "email" && customer.email && emailStatus !== "sent" && (
