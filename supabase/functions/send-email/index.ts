@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { SmtpClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,7 +19,6 @@ serve(async (req) => {
       });
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(to)) {
       return new Response(JSON.stringify({ error: "Invalid email address" }), {
@@ -27,42 +27,38 @@ serve(async (req) => {
       });
     }
 
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!RESEND_API_KEY) {
-      return new Response(JSON.stringify({ error: "Email service not configured. Please add RESEND_API_KEY." }), {
+    const GMAIL_USER = Deno.env.get("GMAIL_USER");
+    const GMAIL_PASS = Deno.env.get("GMAIL_PASS");
+
+    if (!GMAIL_USER || !GMAIL_PASS) {
+      return new Response(JSON.stringify({ error: "Gmail credentials not configured. Please add GMAIL_USER and GMAIL_PASS secrets." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "onboarding@resend.dev";
-
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
+    const client = new SmtpClient({
+      connection: {
+        hostname: "smtp.gmail.com",
+        port: 465,
+        tls: true,
+        auth: {
+          username: GMAIL_USER,
+          password: GMAIL_PASS,
+        },
       },
-      body: JSON.stringify({
-        from: `SalesAgent AI <${SENDER_EMAIL}>`,
-        to: [to],
-        subject,
-        text: body,
-      }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Resend error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "Failed to send email", details: errorText }), {
-        status: response.status,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    await client.send({
+      from: GMAIL_USER,
+      to: to,
+      subject: subject,
+      content: body,
+    });
 
-    const data = await response.json();
+    await client.close();
 
-    return new Response(JSON.stringify({ success: true, id: data.id }), {
+    return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
