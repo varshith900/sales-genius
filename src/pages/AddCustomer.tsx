@@ -34,6 +34,18 @@ const customerSchema = z.object({
   last_interaction_date: z.string().optional(),
 });
 
+const FormField = ({ label, id, required, error, children }: { label: string; id: string; required?: boolean; error?: string; children: React.ReactNode }) => (
+  <div className="space-y-1.5">
+    <Label htmlFor={id} className="text-sm font-medium">
+      {label} {required && <span className="text-primary">*</span>}
+    </Label>
+    {children}
+    {error && (
+      <p className="text-xs text-destructive">{error}</p>
+    )}
+  </div>
+);
+
 const dealStages = ["Lead", "Contacted", "Demo", "Negotiation", "Closed"];
 
 const AddCustomer = () => {
