@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import CustomerDetail from "./pages/CustomerDetail";
+import AddCustomer from "./pages/AddCustomer";
 import Activity from "./pages/Activity";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
+            <Route path="/customers/new" element={<ProtectedRoute><AddCustomer /></ProtectedRoute>} />
             <Route path="/customers/:id" element={<ProtectedRoute><CustomerDetail /></ProtectedRoute>} />
             <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
