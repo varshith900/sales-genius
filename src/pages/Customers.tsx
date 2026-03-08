@@ -71,7 +71,6 @@ const Customers = () => {
             <h1 className="text-3xl font-display font-bold text-foreground">Customers</h1>
             <p className="text-muted-foreground mt-1">Manage your sales pipeline</p>
           </div>
-          </div>
           <div className="flex gap-2">
             <Button variant="glow" onClick={() => navigate("/customers/new")}>
               <Plus className="mr-2 h-4 w-4" />
