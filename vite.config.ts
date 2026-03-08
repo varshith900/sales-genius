@@ -8,7 +8,9 @@ export default defineConfig(({ mode }) => ({
   server: {
   host: true,      
   port: 8080,
-  allowedHosts: "all",
+  allowedHosts: [
+    "dhfj8c-8080.csb.app"
+  ],
   hmr: { overlay: false }
 },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
