@@ -14,7 +14,101 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activity_log: {
+        Row: {
+          action_type: string
+          ai_output: Json | null
+          created_at: string
+          customer_id: string | null
+          description: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          ai_output?: Json | null
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          ai_output?: Json | null
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          budget: number | null
+          company: string
+          created_at: string
+          deal_size: number | null
+          deal_stage: string
+          email: string | null
+          id: string
+          industry: string | null
+          last_interaction_date: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          priority_score: number | null
+          products_interested: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget?: number | null
+          company: string
+          created_at?: string
+          deal_size?: number | null
+          deal_stage?: string
+          email?: string | null
+          id?: string
+          industry?: string | null
+          last_interaction_date?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          priority_score?: number | null
+          products_interested?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget?: number | null
+          company?: string
+          created_at?: string
+          deal_size?: number | null
+          deal_stage?: string
+          email?: string | null
+          id?: string
+          industry?: string | null
+          last_interaction_date?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          priority_score?: number | null
+          products_interested?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
