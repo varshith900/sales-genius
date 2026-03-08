@@ -117,7 +117,7 @@ const CustomerDetail = () => {
     let subject = `Follow-up from SalesAgent AI`;
     const subjectMatch = emailContent.match(/Subject:\s*(.+)/i);
     if (subjectMatch) subject = subjectMatch[1].trim();
-    const body = emailContent.replace(/Subject:\s*.+\n?/i, "").trim();
+    const body = stripMarkdown(emailContent.replace(/Subject:\s*.+\n?/i, "").trim());
 
     try {
       const response = await supabase.functions.invoke("send-email", {
