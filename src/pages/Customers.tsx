@@ -66,10 +66,11 @@ const Customers = () => {
   return (
     <AppLayout>
       <div className="animate-fade-in">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-display font-bold text-foreground">Customers</h1>
             <p className="text-muted-foreground mt-1">Manage your sales pipeline</p>
+          </div>
           </div>
           <div className="flex gap-2">
             <Button variant="glow" onClick={() => navigate("/customers/new")}>

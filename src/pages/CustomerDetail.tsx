@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/AppLayout";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   Bot,
@@ -21,6 +23,9 @@ import {
   Copy,
   Download,
   Loader2,
+  Send,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -45,6 +50,7 @@ const stageColors: Record<string, string> = {
 const CustomerDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,10 +58,13 @@ const CustomerDetail = () => {
   const [agentStep, setAgentStep] = useState(0);
   const [results, setResults] = useState<AgentResults>({});
   const [singleLoading, setSingleLoading] = useState<string | null>(null);
+  const [autoSendEmail, setAutoSendEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+  const [emailSentAt, setEmailSentAt] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || !id) return;
-    const fetch = async () => {
+    const fetchCustomer = async () => {
       const { data } = await supabase
         .from("customers")
         .select("*")
@@ -65,8 +74,16 @@ const CustomerDetail = () => {
       setCustomer(data);
       setLoading(false);
     };
-    fetch();
+    fetchCustomer();
   }, [user, id]);
+
+  // Auto-run agent if redirected from Add Customer with ?autoRun=true
+  useEffect(() => {
+    if (customer && searchParams.get("autoRun") === "true" && !agentRunning) {
+      runFullAgent();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customer]);
 
   const callAI = async (type: string, customerData: Customer) => {
     const response = await supabase.functions.invoke("sales-agent", {
@@ -76,18 +93,70 @@ const CustomerDetail = () => {
     return response.data?.result || "";
   };
 
+  const sendEmail = async (emailContent: string, cust: Customer) => {
+    if (!cust.email || !user) return;
+
+    setEmailStatus("sending");
+
+    // Extract subject line from email content (first line after "Subject:")
+    let subject = `Follow-up from SalesAgent AI`;
+    const subjectMatch = emailContent.match(/Subject:\s*(.+)/i);
+    if (subjectMatch) {
+      subject = subjectMatch[1].trim();
+    }
+
+    // Remove the subject line from body
+    const body = emailContent.replace(/Subject:\s*.+\n?/i, "").trim();
+
+    try {
+      const response = await supabase.functions.invoke("send-email", {
+        body: { to: cust.email, subject, body, customerName: cust.name },
+      });
+
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.error) throw new Error(response.data.error);
+
+      setEmailStatus("sent");
+      setEmailSentAt(new Date().toLocaleString());
+      toast.success(`Email sent to ${cust.email}!`);
+
+      await supabase.from("activity_log").insert({
+        user_id: user.id,
+        customer_id: cust.id,
+        action_type: "email_sent",
+        description: `Email sent to ${cust.name} at ${cust.email}`,
+      });
+    } catch (error: any) {
+      setEmailStatus("failed");
+      toast.error(`Email failed: ${error.message}`);
+
+      await supabase.from("activity_log").insert({
+        user_id: user.id,
+        customer_id: cust.id,
+        action_type: "email_failed",
+        description: `Email to ${cust.name} failed: ${error.message}`,
+      });
+    }
+  };
+
   const runFullAgent = async () => {
     if (!customer || !user) return;
     setAgentRunning(true);
     setResults({});
+    setEmailStatus("idle");
 
     const steps = ["summary", "analysis", "nextAction", "email", "proposal"];
-    
+
     try {
       for (let i = 0; i < steps.length; i++) {
         setAgentStep(i + 1);
         const result = await callAI(steps[i], customer);
         setResults((prev) => ({ ...prev, [steps[i]]: result }));
+
+        // Auto-send email after generation if toggle is on
+        if (steps[i] === "email" && autoSendEmail && customer.email) {
+          await sendEmail(result, customer);
+        }
       }
 
       await supabase.from("activity_log").insert({
@@ -193,24 +262,48 @@ const CustomerDetail = () => {
               <Badge className={stageColors[customer.deal_stage]}>{customer.deal_stage}</Badge>
             </div>
           </div>
-          <Button
-            variant="agent"
-            size="lg"
-            onClick={runFullAgent}
-            disabled={agentRunning}
-          >
-            {agentRunning ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                {stepLabels[agentStep] || "Processing..."}
-              </>
-            ) : (
-              <>
-                <Bot className="mr-2 h-5 w-5" />
-                Run AI Sales Agent
-              </>
+          <div className="flex flex-col gap-3 items-end">
+            <Button variant="agent" size="lg" onClick={runFullAgent} disabled={agentRunning}>
+              {agentRunning ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  {stepLabels[agentStep] || "Processing..."}
+                </>
+              ) : (
+                <>
+                  <Bot className="mr-2 h-5 w-5" />
+                  Run AI Sales Agent
+                </>
+              )}
+            </Button>
+            {customer.email && (
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="auto-send"
+                  checked={autoSendEmail}
+                  onCheckedChange={setAutoSendEmail}
+                />
+                <Label htmlFor="auto-send" className="text-sm text-muted-foreground cursor-pointer">
+                  Auto-send email
+                </Label>
+                {emailStatus === "sent" && (
+                  <Badge className="bg-success/20 text-success gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> Sent {emailSentAt}
+                  </Badge>
+                )}
+                {emailStatus === "failed" && (
+                  <Badge className="bg-destructive/20 text-destructive gap-1">
+                    <XCircle className="h-3 w-3" /> Failed
+                  </Badge>
+                )}
+                {emailStatus === "sending" && (
+                  <Badge className="bg-info/20 text-info gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Sending...
+                  </Badge>
+                )}
+              </div>
             )}
-          </Button>
+          </div>
         </div>
 
         {/* Customer Info Grid */}
@@ -294,6 +387,21 @@ const CustomerDetail = () => {
                     >
                       <Download className="h-4 w-4" />
                     </Button>
+                    {section.key === "email" && customer.email && emailStatus !== "sent" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => sendEmail(content, customer)}
+                        disabled={emailStatus === "sending"}
+                        title={`Send to ${customer.email}`}
+                      >
+                        {emailStatus === "sending" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <div className="text-foreground whitespace-pre-wrap text-sm leading-relaxed">{content}</div>
