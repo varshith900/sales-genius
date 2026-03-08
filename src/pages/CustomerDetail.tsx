@@ -77,7 +77,7 @@ const CustomerDetail = () => {
   const [agentStep, setAgentStep] = useState(0);
   const [results, setResults] = useState<AgentResults>({});
   const [singleLoading, setSingleLoading] = useState<string | null>(null);
-  const [autoSendEmail, setAutoSendEmail] = useState(false);
+  const [autoSendEmail, setAutoSendEmail] = useState(true);
   const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle");
   const [emailSentAt, setEmailSentAt] = useState<string | null>(null);
 
