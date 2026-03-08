@@ -130,7 +130,6 @@ const AddCustomer = () => {
     }
   };
 
-  // FormField extracted outside component to prevent re-mount
 
   return (
     <AppLayout>
