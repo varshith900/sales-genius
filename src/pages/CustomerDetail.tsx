@@ -116,7 +116,7 @@ const CustomerDetail = () => {
     setEmailStatus("sending");
     let subject = `Follow-up from SalesAgent AI`;
     const subjectMatch = emailContent.match(/Subject:\s*(.+)/i);
-    if (subjectMatch) subject = subjectMatch[1].trim();
+    if (subjectMatch) subject = stripMarkdown(subjectMatch[1].trim());
     const body = stripMarkdown(emailContent.replace(/Subject:\s*.+\n?/i, "").trim());
 
     try {
