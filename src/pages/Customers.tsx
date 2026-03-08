@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, Plus, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import type { Database } from "@/integrations/supabase/types";
 
 type Customer = Database["public"]["Tables"]["customers"]["Row"];
@@ -63,86 +64,139 @@ const Customers = () => {
     }
   };
 
+  // Skeleton rows for loading state
+  const SkeletonRow = () => (
+    <tr className="border-b border-border">
+      {[...Array(6)].map((_, i) => (
+        <td key={i} className="p-4">
+          <div className="h-4 shimmer rounded-md w-24" />
+        </td>
+      ))}
+    </tr>
+  );
+
   return (
     <AppLayout>
-      <div className="animate-fade-in">
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <div>
-            <h1 className="text-3xl font-display font-bold text-foreground">Customers</h1>
-            <p className="text-muted-foreground mt-1">Manage your sales pipeline</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="glow" onClick={() => navigate("/customers/new")}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Customer
-            </Button>
-            {customers.length === 0 && !loading && (
-              <Button variant="outline" onClick={seedData}>
-                Load Demo Data
+      <div className="max-w-6xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
+            <div>
+              <h1 className="text-4xl font-display font-bold text-foreground">Customers</h1>
+              <p className="text-muted-foreground mt-2 text-lg">Manage your sales pipeline</p>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="glow" onClick={() => navigate("/customers/new")}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Customer
               </Button>
-            )}
+              {customers.length === 0 && !loading && (
+                <Button variant="outline" onClick={seedData}>
+                  Load Demo Data
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+        <motion.div
+          className="relative mb-6"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+        >
+          <Search className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search customers..."
+            placeholder="Search customers by name, company, or industry..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-secondary border-border max-w-md"
+            className="pl-11 bg-secondary/50 border-border max-w-lg focus-glow h-11"
           />
-        </div>
+        </motion.div>
 
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            {customers.length === 0 ? "No customers yet. Load demo data to get started!" : "No matching customers found."}
-          </div>
-        ) : (
-          <div className="bg-card border border-border rounded-xl overflow-hidden shadow-card">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">Name</th>
-                  <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden md:table-cell">Company</th>
-                  <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden lg:table-cell">Industry</th>
-                  <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden lg:table-cell">Deal Size</th>
-                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">Stage</th>
-                  <th className="text-left p-4 text-sm font-medium text-muted-foreground"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((customer) => (
-                  <tr
-                    key={customer.id}
-                    className="border-b border-border last:border-0 hover:bg-secondary/50 cursor-pointer transition-colors"
-                    onClick={() => navigate(`/customers/${customer.id}`)}
-                  >
-                    <td className="p-4">
-                      <div className="font-medium text-foreground">{customer.name}</div>
-                      <div className="text-sm text-muted-foreground md:hidden">{customer.company}</div>
-                    </td>
-                    <td className="p-4 text-foreground hidden md:table-cell">{customer.company}</td>
-                    <td className="p-4 text-muted-foreground hidden lg:table-cell">{customer.industry || "—"}</td>
-                    <td className="p-4 text-foreground hidden lg:table-cell">
-                      {customer.deal_size ? `$${customer.deal_size.toLocaleString()}` : "—"}
-                    </td>
-                    <td className="p-4">
-                      <Badge className={stageColors[customer.deal_stage] || ""}>{customer.deal_stage}</Badge>
-                    </td>
-                    <td className="p-4">
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    </td>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.25 }}
+        >
+          {loading ? (
+            <div className="glass rounded-xl overflow-hidden shadow-card">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Name</th>
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden md:table-cell">Company</th>
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden lg:table-cell">Industry</th>
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden lg:table-cell">Deal Size</th>
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Stage</th>
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {[...Array(5)].map((_, i) => <SkeletonRow key={i} />)}
+                </tbody>
+              </table>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
+                <Search className="h-7 w-7 text-muted-foreground/50" />
+              </div>
+              <p className="text-lg font-medium">
+                {customers.length === 0 ? "No customers yet" : "No matching customers"}
+              </p>
+              <p className="text-sm mt-1">
+                {customers.length === 0 ? "Add a customer or load demo data to get started." : "Try adjusting your search."}
+              </p>
+            </div>
+          ) : (
+            <div className="glass rounded-xl overflow-hidden shadow-card">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Name</th>
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden md:table-cell">Company</th>
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden lg:table-cell">Industry</th>
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden lg:table-cell">Deal Size</th>
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Stage</th>
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((customer, i) => (
+                    <motion.tr
+                      key={customer.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: i * 0.04 }}
+                      className="border-b border-border last:border-0 hover:bg-primary/[0.03] cursor-pointer transition-colors duration-200 group"
+                      onClick={() => navigate(`/customers/${customer.id}`)}
+                    >
+                      <td className="p-4">
+                        <div className="font-medium text-foreground group-hover:text-primary transition-colors">{customer.name}</div>
+                        <div className="text-sm text-muted-foreground md:hidden">{customer.company}</div>
+                      </td>
+                      <td className="p-4 text-foreground hidden md:table-cell">{customer.company}</td>
+                      <td className="p-4 text-muted-foreground hidden lg:table-cell">{customer.industry || "—"}</td>
+                      <td className="p-4 text-foreground hidden lg:table-cell font-medium">
+                        {customer.deal_size ? `$${customer.deal_size.toLocaleString()}` : "—"}
+                      </td>
+                      <td className="p-4">
+                        <Badge className={`${stageColors[customer.deal_stage] || ""} font-medium`}>{customer.deal_stage}</Badge>
+                      </td>
+                      <td className="p-4">
+                        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </motion.div>
       </div>
     </AppLayout>
   );
